@@ -2,7 +2,7 @@ import { Header, Footer } from "@/components/Layout";
 import { MapView } from "@/components/Map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, AlertTriangle, Car, Activity, MapPin, Search, Siren } from "lucide-react";
+import { Shield, AlertTriangle, Car, Activity, MapPin, Search, Siren, ExternalLink } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +22,7 @@ interface Vehicle {
 export default function Dashboard() {
   const mapRef = useRef<google.maps.Map | null>(null);
   const markersRef = useRef<{ [key: number]: google.maps.Marker }>({});
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const [activeAlerts, setActiveAlerts] = useState(3);
   const [trackedVehicles, setTrackedVehicles] = useState(12450);
   
@@ -62,6 +63,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (!mapRef.current) return;
 
+    // Initialize InfoWindow if not exists
+    if (!infoWindowRef.current) {
+      infoWindowRef.current = new google.maps.InfoWindow();
+    }
+
     vehicles.forEach(v => {
       const position = { lat: v.lat, lng: v.lng };
       
@@ -92,15 +98,23 @@ export default function Dashboard() {
           },
         });
         
-        // Add click listener
+        // Add click listener to open InfoWindow
         marker.addListener("click", () => {
-          toast(
-            <div className="flex flex-col gap-1">
-              <span className="font-bold font-changa">{v.plate}</span>
-              <span className="text-xs">السرعة: {Math.round(v.speed)} كم/س</span>
-              {v.alertType && <span className="text-xs text-destructive font-bold">{v.alertType}</span>}
+          const contentString = `
+            <div style="direction: rtl; text-align: right; font-family: 'Tajawal', sans-serif; color: #333; padding: 5px;">
+              <h3 style="margin: 0 0 5px 0; font-weight: bold; color: #000;">${v.plate}</h3>
+              <div style="font-size: 12px; margin-bottom: 5px;">
+                <strong>الحالة:</strong> ${v.alertType || "نشط"}<br>
+                <strong>السرعة:</strong> ${Math.round(v.speed)} كم/س
+              </div>
+              <a href="https://www.google.com/maps/search/?api=1&query=${v.lat},${v.lng}" target="_blank" style="display: inline-block; background-color: #0ea5e9; color: white; text-decoration: none; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
+                فتح في خرائط جوجل
+              </a>
             </div>
-          );
+          `;
+          
+          infoWindowRef.current?.setContent(contentString);
+          infoWindowRef.current?.open(mapRef.current, marker);
         });
 
         markersRef.current[v.id] = marker;
@@ -121,6 +135,12 @@ export default function Dashboard() {
     if (targetVehicle) {
       mapRef.current.panTo({ lat: targetVehicle.lat, lng: targetVehicle.lng });
       mapRef.current.setZoom(15);
+      
+      // Trigger click on the marker to open InfoWindow
+      if (markersRef.current[targetVehicle.id]) {
+        google.maps.event.trigger(markersRef.current[targetVehicle.id], 'click');
+      }
+      
       toast.info(`تم تحديد موقع: ${targetVehicle.alertType || targetVehicle.plate}`);
     } else {
       toast.error("لا توجد مركبات من هذا النوع حالياً");
@@ -244,6 +264,10 @@ export default function Dashboard() {
                       if (mapRef.current) {
                         mapRef.current.panTo({ lat: v.lat, lng: v.lng });
                         mapRef.current.setZoom(15);
+                        // Trigger click on marker
+                        if (markersRef.current[v.id]) {
+                          google.maps.event.trigger(markersRef.current[v.id], 'click');
+                        }
                       }
                     }}
                   />
