@@ -77,8 +77,6 @@ export default function Dashboard() {
       // Create or update marker
       if (markersRef.current[v.id]) {
         markersRef.current[v.id].setPosition(position);
-        // Update icon rotation if we had a custom SVG with rotation support, 
-        // for now just position
       } else {
         const marker = new google.maps.Marker({
           position,
@@ -114,6 +112,21 @@ export default function Dashboard() {
     mapRef.current = map;
   };
 
+  // Function to focus map on specific vehicle type
+  const focusOnVehicleType = (type: string) => {
+    if (!mapRef.current) return;
+
+    const targetVehicle = vehicles.find(v => v.type === type || (type === "alert" && v.status === "alert"));
+    
+    if (targetVehicle) {
+      mapRef.current.panTo({ lat: targetVehicle.lat, lng: targetVehicle.lng });
+      mapRef.current.setZoom(15);
+      toast.info(`تم تحديد موقع: ${targetVehicle.alertType || targetVehicle.plate}`);
+    } else {
+      toast.error("لا توجد مركبات من هذا النوع حالياً");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground font-tajawal">
       <Header />
@@ -139,13 +152,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - Now Clickable */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatCard 
             icon={<Car className="w-8 h-8 text-primary" />}
             title="المركبات المتصلة"
             value={trackedVehicles.toLocaleString()}
             trend="+12% هذا الأسبوع"
+            onClick={() => focusOnVehicleType("police")}
           />
           <StatCard 
             icon={<AlertTriangle className="w-8 h-8 text-orange-500" />}
@@ -153,6 +167,7 @@ export default function Dashboard() {
             value="142"
             trend="رصد حي"
             trendColor="text-orange-500"
+            onClick={() => focusOnVehicleType("alert")}
           />
           <StatCard 
             icon={<Shield className="w-8 h-8 text-destructive" />}
@@ -160,6 +175,8 @@ export default function Dashboard() {
             value="1"
             trend="جاري التتبع..."
             trendColor="text-destructive animate-pulse"
+            onClick={() => focusOnVehicleType("target")}
+            className="cursor-pointer hover:bg-destructive/10 border-destructive/30"
           />
           <StatCard 
             icon={<MapPin className="w-8 h-8 text-yellow-500" />}
@@ -167,6 +184,8 @@ export default function Dashboard() {
             value="1"
             trend="تم تحديد الموقع"
             trendColor="text-yellow-500"
+            onClick={() => focusOnVehicleType("missing")}
+            className="cursor-pointer hover:bg-yellow-500/10 border-yellow-500/30"
           />
         </div>
 
@@ -221,6 +240,12 @@ export default function Dashboard() {
                     severity={v.type === "target" || v.type === "missing" ? "critical" : "high"}
                     plate={v.plate}
                     speed={v.speed}
+                    onClick={() => {
+                      if (mapRef.current) {
+                        mapRef.current.panTo({ lat: v.lat, lng: v.lng });
+                        mapRef.current.setZoom(15);
+                      }
+                    }}
                   />
                 ))}
                 <AlertItem 
@@ -260,9 +285,12 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, title, value, trend, trendColor = "text-primary" }: any) {
+function StatCard({ icon, title, value, trend, trendColor = "text-primary", onClick, className }: any) {
   return (
-    <Card className="bg-card/50 border-primary/10 hover:border-primary/40 transition-colors">
+    <Card 
+      className={`bg-card/50 border-primary/10 hover:border-primary/40 transition-all active:scale-95 cursor-pointer ${className}`}
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="p-2 bg-primary/10 rounded-lg">{icon}</div>
@@ -270,12 +298,13 @@ function StatCard({ icon, title, value, trend, trendColor = "text-primary" }: an
         </div>
         <div className="text-3xl font-bold font-changa mb-1">{value}</div>
         <div className="text-sm text-muted-foreground">{title}</div>
+        <div className="text-xs text-primary mt-2 opacity-0 hover:opacity-100 transition-opacity">انقر لتحديد الموقع</div>
       </CardContent>
     </Card>
   );
 }
 
-function AlertItem({ type, location, time, severity, plate, speed }: any) {
+function AlertItem({ type, location, time, severity, plate, speed, onClick }: any) {
   const colors = {
     critical: "border-l-4 border-l-red-600 bg-red-500/10 animate-pulse",
     high: "border-l-4 border-l-orange-500 bg-orange-500/10",
@@ -283,7 +312,10 @@ function AlertItem({ type, location, time, severity, plate, speed }: any) {
   };
   
   return (
-    <div className={`p-3 rounded-r-md ${colors[severity as keyof typeof colors]} flex justify-between items-start`}>
+    <div 
+      className={`p-3 rounded-r-md ${colors[severity as keyof typeof colors]} flex justify-between items-start cursor-pointer hover:bg-white/5 transition-colors`}
+      onClick={onClick}
+    >
       <div>
         <div className="font-bold text-sm mb-1 flex items-center gap-2">
           {type}
