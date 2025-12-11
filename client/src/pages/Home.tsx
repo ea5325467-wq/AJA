@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Satellite, Shield, Car, MapPin, AlertTriangle, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { Link } from "wouter";
 
 export default function Home() {
   return (
@@ -35,12 +36,16 @@ export default function Home() {
               <span className="text-primary font-bold">أمان شامل. استجابة فورية. تغطية لا تنقطع.</span>
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 rounded-none border border-primary/50 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all">
-                استكشف النظام
-              </Button>
-              <Button size="lg" variant="outline" className="bg-transparent border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6 rounded-none backdrop-blur-sm">
-                تسجيل الدخول للجهات الأمنية
-              </Button>
+              <Link href="/features">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 rounded-none border border-primary/50 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all w-full sm:w-auto">
+                  استكشف النظام
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button size="lg" variant="outline" className="bg-transparent border-primary text-primary hover:bg-primary/10 text-lg px-8 py-6 rounded-none backdrop-blur-sm w-full sm:w-auto">
+                  تسجيل الدخول للجهات الأمنية
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
