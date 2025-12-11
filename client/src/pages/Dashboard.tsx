@@ -2,7 +2,7 @@ import { Header, Footer } from "@/components/Layout";
 import { MapView } from "@/components/Map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, AlertTriangle, Car, Activity, MapPin, Search, Siren, ExternalLink } from "lucide-react";
+import { Shield, AlertTriangle, Car, Activity, MapPin, Search, Siren, ExternalLink, Filter } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -25,6 +25,7 @@ export default function Dashboard() {
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const [activeAlerts, setActiveAlerts] = useState(3);
   const [trackedVehicles, setTrackedVehicles] = useState(12450);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   
   // Initial state with more diverse scenarios
   const [vehicles, setVehicles] = useState<Vehicle[]>([
@@ -59,7 +60,7 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Update markers on map when vehicles change
+  // Update markers on map when vehicles change or filter changes
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -69,6 +70,15 @@ export default function Dashboard() {
     }
 
     vehicles.forEach(v => {
+      // Check if vehicle should be visible based on filter
+      let isVisible = true;
+      if (activeFilter) {
+        if (activeFilter === "police" && v.type !== "police") isVisible = false;
+        if (activeFilter === "target" && v.type !== "target") isVisible = false;
+        if (activeFilter === "missing" && v.type !== "missing") isVisible = false;
+        if (activeFilter === "alert" && !(v.status === "alert" && v.type === "civilian")) isVisible = false;
+      }
+
       const position = { lat: v.lat, lng: v.lng };
       
       // Determine icon based on type
@@ -83,11 +93,13 @@ export default function Dashboard() {
       // Create or update marker
       if (markersRef.current[v.id]) {
         markersRef.current[v.id].setPosition(position);
+        markersRef.current[v.id].setVisible(isVisible);
       } else {
         const marker = new google.maps.Marker({
           position,
           map: mapRef.current,
           title: `${v.type.toUpperCase()} - ${v.plate}`,
+          visible: isVisible,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
             scale: scale,
@@ -120,7 +132,7 @@ export default function Dashboard() {
         markersRef.current[v.id] = marker;
       }
     });
-  }, [vehicles]);
+  }, [vehicles, activeFilter]);
 
   const handleMapReady = (map: google.maps.Map) => {
     mapRef.current = map;
@@ -144,6 +156,16 @@ export default function Dashboard() {
       toast.info(`تم تحديد موقع: ${targetVehicle.alertType || targetVehicle.plate}`);
     } else {
       toast.error("لا توجد مركبات من هذا النوع حالياً");
+    }
+  };
+
+  const toggleFilter = (filter: string) => {
+    if (activeFilter === filter) {
+      setActiveFilter(null);
+      toast.info("تم إلغاء الفلترة: عرض الكل");
+    } else {
+      setActiveFilter(filter);
+      toast.info(`تم تفعيل الفلترة: ${filter}`);
     }
   };
 
@@ -214,13 +236,36 @@ export default function Dashboard() {
           {/* Map Section */}
           <Card className="lg:col-span-2 border-primary/20 shadow-[0_0_20px_rgba(6,182,212,0.1)] overflow-hidden flex flex-col">
             <CardHeader className="bg-card/50 border-b border-border pb-4">
-              <CardTitle className="flex justify-between items-center font-changa">
-                <span>الخريطة الحية</span>
-                <div className="flex gap-4 text-sm font-normal">
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span> دوريات</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> مطلوب</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span> مفقود</span>
-                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500"></span> مخالفة</span>
+              <CardTitle className="flex flex-col md:flex-row justify-between items-center font-changa gap-4">
+                <div className="flex items-center gap-2">
+                  <span>الخريطة الحية</span>
+                  {activeFilter && <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full flex items-center gap-1"><Filter className="w-3 h-3" /> مفلتر</span>}
+                </div>
+                <div className="flex flex-wrap gap-2 text-sm font-normal">
+                  <button 
+                    onClick={() => toggleFilter("police")}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full transition-all ${activeFilter === "police" ? "bg-cyan-500/20 border border-cyan-500" : "hover:bg-white/5"}`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]"></span> دوريات
+                  </button>
+                  <button 
+                    onClick={() => toggleFilter("target")}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full transition-all ${activeFilter === "target" ? "bg-red-500/20 border border-red-500" : "hover:bg-white/5"}`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> مطلوب
+                  </button>
+                  <button 
+                    onClick={() => toggleFilter("missing")}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full transition-all ${activeFilter === "missing" ? "bg-yellow-500/20 border border-yellow-500" : "hover:bg-white/5"}`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span> مفقود
+                  </button>
+                  <button 
+                    onClick={() => toggleFilter("alert")}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-full transition-all ${activeFilter === "alert" ? "bg-orange-500/20 border border-orange-500" : "hover:bg-white/5"}`}
+                  >
+                    <span className="w-3 h-3 rounded-full bg-orange-500"></span> مخالفة
+                  </button>
                 </div>
               </CardTitle>
             </CardHeader>
