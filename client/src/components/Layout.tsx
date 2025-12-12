@@ -22,6 +22,7 @@ export function Header() {
           <Link href="/features"><span className="text-foreground/80 hover:text-primary transition-colors cursor-pointer font-tajawal">المميزات</span></Link>
           <Link href="/dashboard"><span className="text-foreground/80 hover:text-primary transition-colors cursor-pointer font-tajawal">لوحة التحكم</span></Link>
           <Link href="/report"><span className="text-foreground/80 hover:text-primary transition-colors cursor-pointer font-tajawal">الاستعلام الأمني</span></Link>
+          <Link href="/docs"><span className="text-foreground/80 hover:text-primary transition-colors cursor-pointer font-tajawal">الوثائق التقنية</span></Link>
           <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
             تسجيل الدخول
           </Button>
@@ -40,6 +41,7 @@ export function Header() {
           <Link href="/features"><span className="block py-2 text-foreground/80 hover:text-primary cursor-pointer font-tajawal">المميزات</span></Link>
           <Link href="/dashboard"><span className="block py-2 text-foreground/80 hover:text-primary cursor-pointer font-tajawal">لوحة التحكم</span></Link>
           <Link href="/report"><span className="block py-2 text-foreground/80 hover:text-primary cursor-pointer font-tajawal">الاستعلام الأمني</span></Link>
+          <Link href="/docs"><span className="block py-2 text-foreground/80 hover:text-primary cursor-pointer font-tajawal">الوثائق التقنية</span></Link>
           <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
             تسجيل الدخول
           </Button>
